@@ -105,7 +105,20 @@ function buildLevel(){
 function updateStats(){levelEl.textContent=level;lv.textContent=level;sc.textContent=score}
 function metrics(){const g=grid.getBoundingClientRect(),cs=getComputedStyle(grid),gap=parseFloat(cs.columnGap)||0,rowGap=parseFloat(cs.rowGap)||gap;return{g,gap,rowGap,w:(g.width-gap*(C-1))/C,h:(g.height-rowGap*(R-1))/R}}
 function pointInBoard(e){const r=board.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
-function render(){grid.innerHTML="";for(let r=0;r<R;r++)for(let c=0;c<C;c++){const h=document.createElement("div");h.className="hole";h.dataset.cell=r+","+c;grid.append(h)}for(const p of pieces.filter(x=>x.placed))drawBoardPiece(p);tray.innerHTML="";for(const p of pieces.filter(x=>!x.fixed&&!x.placed))drawTrayPiece(p);const count=pieces.filter(p=>p.placed).reduce((n,p)=>n+p.pos.length,0);bar.style.width=(count/T*100)+"%";prog.textContent=count+" / "+T+" Felder"}
+function render(){
+ // Remove every old visual board piece before redrawing. Without this, each render
+ // (drag, drop, reset, rotate, mirror) stacked another copy on the board.
+ board.querySelectorAll(".pieceOnBoard,.float,.ghost,.toolbar").forEach(el=>el.remove());
+ toolbar=null;
+ grid.innerHTML="";
+ for(let r=0;r<R;r++)for(let c=0;c<C;c++){const h=document.createElement("div");h.className="hole";h.dataset.cell=r+","+c;grid.append(h)}
+ for(const p of pieces.filter(x=>x.placed))drawBoardPiece(p);
+ tray.innerHTML="";
+ for(const p of pieces.filter(x=>!x.fixed&&!x.placed))drawTrayPiece(p);
+ const count=pieces.filter(p=>p.placed).reduce((n,p)=>n+p.pos.length,0);
+ bar.style.width=(count/T*100)+"%";
+ prog.textContent=count+" / "+T+" Felder";
+}
 function drawBoardPiece(p){
  const m=metrics(),a=transformCells(p),sz=shapeSize(a),dot=Math.min(m.w,m.h)*.82;
  const el=document.createElement("div");
@@ -283,7 +296,7 @@ function positionToolbar(p){
   });
 }
 function win(){clearInterval(timer);const gain=Math.max(100,1000-seconds*3);score+=gain;safeSet("lonposScore",score);let done;try{done=JSON.parse(safeGet("lonposDone","[]"));if(!Array.isArray(done))done=[]}catch(e){done=[]}if(!done.includes(level))done.push(level);safeSet("lonposDone",JSON.stringify(done));updateStats();setTimeout(()=>{alert("🎉 Level "+level+" geschafft!\nZeit: "+fmt(seconds)+"\n+"+gain+" Punkte");if(level<100){level++;safeSet("lonposLevel",level);buildLevel()}},120)}
-document.getElementById("reset").onclick=()=>buildLevel();
+document.getElementById("reset").onclick=()=>{cancelDrag();selected=null;removeToolbar();buildLevel();};
 document.getElementById("levels").onclick=()=>{const n=Number(prompt("Level auswählen (1–100):",level));if(n>=1&&n<=100){level=n;safeSet("lonposLevel",level);buildLevel()}};
 window.addEventListener("resize",()=>{render();if(selected)showToolbar(pieces.find(p=>p.id===selected))});
 window.addEventListener("orientationchange",()=>setTimeout(()=>{render();if(selected)showToolbar(pieces.find(p=>p.id===selected))},120));
