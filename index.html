@@ -22,9 +22,9 @@ header{display:flex;justify-content:space-between;align-items:center;gap:10px;fl
 #status{text-align:center;min-height:48px;display:flex;align-items:center;justify-content:center;font-weight:800;margin:7px 4px;line-height:1.2;padding:4px 8px}.bad{color:var(--bad)}.good{color:var(--good)}
 .boardWrap{display:flex;justify-content:center;padding:3px 0 14px;width:100%}#board{position:relative;width:min(760px,98vw);aspect-ratio:11/5;background:#080b12;border:3px solid #30394a;border-radius:16px;padding:8px;touch-action:none;user-select:none;-webkit-user-select:none}
 .grid{position:absolute;inset:8px;display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(5,1fr);gap:3px}.hole{border-radius:50%;background:#232a35;box-shadow:inset 0 3px 5px #000}.hole.filled:after{content:"";display:block;width:82%;height:82%;margin:9%;border-radius:50%;background:var(--piece);box-shadow:0 2px 4px #000}.hole.fixed:after{filter:brightness(1.06);box-shadow:0 0 0 2px rgba(255,255,255,.35),0 2px 4px #000}
-.pieceOnBoard{position:absolute;z-index:50;display:grid;gap:2px;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;filter:drop-shadow(0 5px 7px rgba(0,0,0,.35));cursor:grab}.pieceOnBoard.selected{filter:drop-shadow(0 6px 10px rgba(0,0,0,.55));outline:2px solid var(--accent);outline-offset:3px;border-radius:9px}.pieceOnBoard.fixedPiece{cursor:default;opacity:.94}.dot{width:var(--s);height:var(--s);border-radius:50%;background:var(--piece);box-shadow:0 2px 4px #000}
+.pieceOnBoard{position:absolute;z-index:50;display:grid;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;filter:drop-shadow(0 5px 7px rgba(0,0,0,.35));cursor:grab;align-items:center;justify-items:center}.pieceOnBoard.selected{filter:drop-shadow(0 6px 10px rgba(0,0,0,.55));outline:2px solid var(--accent);outline-offset:3px;border-radius:9px}.pieceOnBoard.fixedPiece{cursor:default;opacity:.94}.dot{width:var(--s);height:var(--s);border-radius:50%;background:var(--piece);box-shadow:0 2px 4px #000}
 .tray{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.piece{min-height:76px;background:var(--card);border:1px solid var(--line);border-radius:11px;display:flex;align-items:center;justify-content:center;position:relative;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}.piece.selected{outline:3px solid var(--accent)}.piece.drag{opacity:0;pointer-events:none}.name{position:absolute;bottom:3px;font-size:10px;color:#d8deea}.shape{display:grid;gap:2px}
-.float{position:absolute;z-index:100;display:grid;gap:3px;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 5px 8px rgba(0,0,0,.35))}.float .dot{width:var(--s);height:var(--s)}
+.float{position:absolute;z-index:100;display:grid;transform:none;pointer-events:none;filter:drop-shadow(0 5px 8px rgba(0,0,0,.35))}.float .dot{width:var(--s);height:var(--s)}
 .ghost{position:absolute;z-index:90;display:grid;gap:3px;pointer-events:none;opacity:.38}.ghost .dot{width:var(--s);height:var(--s);box-shadow:none}.ghost.invalid .dot{filter:grayscale(1)}
 .toolbar{position:absolute;z-index:160;display:flex;gap:5px;padding:5px;max-width:calc(100% - 10px);background:rgba(12,17,29,.94);border:1px solid #58647d;border-radius:12px;box-shadow:0 7px 20px rgba(0,0,0,.35);transform:translate(-50%,-100%);pointer-events:auto}.toolbtn{width:42px;height:38px;border:0;border-radius:9px;background:#27324a;color:#fff;font-size:20px;font-weight:900}.toolbtn:active{transform:scale(.94)}
 .progress{height:7px;background:#080c14;border-radius:20px;overflow:hidden;margin-top:9px}.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s}.hint{margin-top:8px;text-align:center;color:var(--muted);font-size:11px}
@@ -103,22 +103,64 @@ function buildLevel(){
  pieces=shuffled(base,rng);selected=null;removeToolbar();seconds=0;clearInterval(timer);tm.textContent="00:00";timer=setInterval(()=>{seconds++;tm.textContent=fmt(seconds)},1000);statusEl.className="";statusEl.textContent="Eine Figur ist bereits platziert. Ziehe die anderen Teile ins Feld.";render();updateStats();
 }
 function updateStats(){levelEl.textContent=level;lv.textContent=level;sc.textContent=score}
-function metrics(){const g=grid.getBoundingClientRect();return{g,w:g.width/C,h:g.height/R}}
+function metrics(){const g=grid.getBoundingClientRect(),cs=getComputedStyle(grid),gap=parseFloat(cs.columnGap)||0,rowGap=parseFloat(cs.rowGap)||gap;return{g,gap,rowGap,w:(g.width-gap*(C-1))/C,h:(g.height-rowGap*(R-1))/R}}
 function pointInBoard(e){const r=board.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
 function render(){grid.innerHTML="";for(let r=0;r<R;r++)for(let c=0;c<C;c++){const h=document.createElement("div");h.className="hole";h.dataset.cell=r+","+c;grid.append(h)}for(const p of pieces.filter(x=>x.placed))drawBoardPiece(p);tray.innerHTML="";for(const p of pieces.filter(x=>!x.fixed&&!x.placed))drawTrayPiece(p);const count=pieces.filter(p=>p.placed).reduce((n,p)=>n+p.pos.length,0);bar.style.width=(count/T*100)+"%";prog.textContent=count+" / "+T+" Felder"}
-function drawBoardPiece(p){const m=metrics(),cell=Math.min(m.w,m.h)*.76,a=transformCells(p),sz=shapeSize(a);const el=document.createElement("div");el.className="pieceOnBoard"+(selected===p.id?" selected":"")+(p.fixed?" fixedPiece":"");el.dataset.id=p.id;el.style.setProperty("--piece",p.color);el.style.setProperty("--s",cell+"px");el.style.gridTemplateColumns=`repeat(${sz.w},${cell}px)`;const left=8+p.col*m.w+(m.w-cell)/2,top=8+p.row*m.h+(m.h-cell)/2;el.style.left=left+"px";el.style.top=top+"px";a.forEach(([r,c])=>{const d=document.createElement("div");d.className="dot";d.style.gridRow=r+1;d.style.gridColumn=c+1;el.append(d)});el.addEventListener("pointerdown",boardStart,{passive:false});board.append(el)}
-function drawTrayPiece(p){const card=document.createElement("div");card.className="piece"+(selected===p.id?" selected":"");card.dataset.id=p.id;card.style.setProperty("--piece",p.color);const a=transformCells(p),sz=shapeSize(a),q=document.createElement("div");q.className="shape";q.style.gridTemplateColumns=`repeat(${sz.w},20px)`;a.forEach(([r,c])=>{const d=document.createElement("div");d.className="dot";d.style.width="20px";d.style.height="20px";d.style.gridRow=r+1;d.style.gridColumn=c+1;q.append(d)});card.append(q);const n=document.createElement("div");n.className="name";n.textContent=p.name;card.append(n);card.addEventListener("pointerdown",trayStart,{passive:false});tray.append(card)}
-function makeFloat(p){const f=document.createElement("div");f.className="float";f.style.setProperty("--piece",p.color);const a=transformCells(p),sz=shapeSize(a),m=metrics(),s=Math.min(m.w,m.h)*.84;f.style.setProperty("--s",s+"px");f.style.gridTemplateColumns=`repeat(${sz.w},${s}px)`;a.forEach(([r,c])=>{const d=document.createElement("div");d.className="dot";d.style.gridRow=r+1;d.style.gridColumn=c+1;f.append(d)});board.append(f);return f}
-function ghostFor(p,row,col,valid){const g=document.createElement("div");g.className="ghost"+(valid?"":" invalid");g.style.setProperty("--piece",p.color);const a=transformCells(p),sz=shapeSize(a),m=metrics(),s=Math.min(m.w,m.h)*.84;g.style.setProperty("--s",s+"px");g.style.gridTemplateColumns=`repeat(${sz.w},${s}px)`;g.style.left=(8+col*m.w+(m.w-s)/2)+"px";g.style.top=(8+row*m.h+(m.h-s)/2)+"px";a.forEach(([r,c])=>{const d=document.createElement("div");d.className="dot";d.style.gridRow=r+1;d.style.gridColumn=c+1;g.append(d)});board.append(g);return g}
-function preview(e){if(!drag)return;e.preventDefault();const pt=pointInBoard(e),m=metrics(),a=transformCells(drag.p),sz=shapeSize(a);drag.f.style.left=pt.x+"px";drag.f.style.top=pt.y+"px";const col=Math.round((pt.x-8-(sz.w*m.w)/2)/m.w),row=Math.round((pt.y-8-(sz.h*m.h)/2)/m.h);const valid=validAt(drag.p,row,col,drag.p);if(drag.ghost)drag.ghost.remove();drag.ghost=ghostFor(drag.p,row,col,valid);drag.row=row;drag.col=col;drag.valid=valid}
-function beginDrag(p,e){
+function drawBoardPiece(p){
+ const m=metrics(),a=transformCells(p),sz=shapeSize(a),dot=Math.min(m.w,m.h)*.82;
+ const el=document.createElement("div");
+ el.className="pieceOnBoard"+(selected===p.id?" selected":"")+(p.fixed?" fixedPiece":"");
+ el.dataset.id=p.id;el.style.setProperty("--piece",p.color);el.style.setProperty("--s",dot+"px");
+ el.style.gridTemplateColumns=`repeat(${sz.w},${m.w}px)`;
+ el.style.gridTemplateRows=`repeat(${sz.h},${m.h}px)`;
+ el.style.columnGap=m.gap+"px";el.style.rowGap=m.rowGap+"px";
+ const left=8+p.col*(m.w+m.gap),top=8+p.row*(m.h+m.rowGap);
+ el.style.left=left+"px";el.style.top=top+"px";
+ a.forEach(([r,c])=>{const d=document.createElement("div");d.className="dot";d.style.gridRow=r+1;d.style.gridColumn=c+1;el.append(d)});
+ el.addEventListener("pointerdown",boardStart,{passive:false});board.append(el);
+}function drawTrayPiece(p){const card=document.createElement("div");card.className="piece"+(selected===p.id?" selected":"");card.dataset.id=p.id;card.style.setProperty("--piece",p.color);const a=transformCells(p),sz=shapeSize(a),q=document.createElement("div");q.className="shape";q.style.gridTemplateColumns=`repeat(${sz.w},20px)`;a.forEach(([r,c])=>{const d=document.createElement("div");d.className="dot";d.style.width="20px";d.style.height="20px";d.style.gridRow=r+1;d.style.gridColumn=c+1;q.append(d)});card.append(q);const n=document.createElement("div");n.className="name";n.textContent=p.name;card.append(n);card.addEventListener("pointerdown",trayStart,{passive:false});tray.append(card)}
+function makeFloat(p){
+ const f=document.createElement("div");f.className="float";f.style.setProperty("--piece",p.color);
+ const a=transformCells(p),sz=shapeSize(a),m=metrics(),s=Math.min(m.w,m.h)*.82;
+ f.style.setProperty("--s",s+"px");
+ f.style.gridTemplateColumns=`repeat(${sz.w},${m.w}px)`;
+ f.style.gridTemplateRows=`repeat(${sz.h},${m.h}px)`;
+ f.style.columnGap=m.gap+"px";f.style.rowGap=m.rowGap+"px";
+ a.forEach(([r,c])=>{const d=document.createElement("div");d.className="dot";d.style.gridRow=r+1;d.style.gridColumn=c+1;f.append(d)});
+ board.append(f);return f;
+}
+function ghostFor(p,row,col,valid){
+ const g=document.createElement("div");g.className="ghost"+(valid?"":" invalid");g.style.setProperty("--piece",p.color);
+ const a=transformCells(p),sz=shapeSize(a),m=metrics(),s=Math.min(m.w,m.h)*.82;
+ g.style.setProperty("--s",s+"px");
+ g.style.gridTemplateColumns=`repeat(${sz.w},${m.w}px)`;
+ g.style.gridTemplateRows=`repeat(${sz.h},${m.h}px)`;
+ g.style.columnGap=m.gap+"px";g.style.rowGap=m.rowGap+"px";
+ g.style.left=(8+col*(m.w+m.gap))+"px";g.style.top=(8+row*(m.h+m.rowGap))+"px";
+ a.forEach(([r,c])=>{const d=document.createElement("div");d.className="dot";d.style.gridRow=r+1;d.style.gridColumn=c+1;g.append(d)});
+ board.append(g);return g;
+}
+function preview(e){
+ if(!drag)return;e.preventDefault();
+ const pt=pointInBoard(e),m=metrics(),a=transformCells(drag.p),sz=shapeSize(a);
+ // Keep the whole piece visually centered under the finger.
+ drag.f.style.left=pt.x-(sz.w*m.w+(sz.w-1)*m.gap)/2+"px";
+ drag.f.style.top=pt.y-(sz.h*m.h+(sz.h-1)*m.rowGap)/2+"px";
+ const col=Math.round((pt.x-8-(sz.w*m.w+(sz.w-1)*m.gap)/2)/(m.w+m.gap));
+ const row=Math.round((pt.y-8-(sz.h*m.h+(sz.h-1)*m.rowGap)/2)/(m.h+m.rowGap));
+ const valid=validAt(drag.p,row,col,drag.p);
+ if(drag.ghost)drag.ghost.remove();
+ drag.ghost=ghostFor(drag.p,row,col,valid);
+ drag.row=row;drag.col=col;drag.valid=valid;
+}function beginDrag(p,e){
   // One physical piece = one logical piece. Hide the original while dragging
   // so the floating copy is only a visual drag representation, never a duplicate.
   selected=p.id;removeToolbar();
   const source=e.currentTarget;
   if(source&&source.classList)source.classList.add("drag");
   const f=makeFloat(p);
-  drag={p,f,source,ghost:null,row:null,col:null,valid:false};
+  drag={p,f,source,ghost:null,row:null,col:null,valid:false,pointerId:e.pointerId};
+  try{source.setPointerCapture?.(e.pointerId)}catch(err){}
   preview(e);
   window.addEventListener("pointermove",preview,{passive:false});
   window.addEventListener("pointerup",endDrag,{once:true});
