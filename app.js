@@ -1,60 +1,4 @@
-<!doctype html>
-<html lang="de">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#0b1020">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="LONPOS">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-192.png">
-<title>LONPOS Puzzle</title>
-<style>
-:root{--bg:#090e19;--panel:#121a2b;--card:#1a2539;--line:#303d57;--text:#f7f8fb;--muted:#9aa8bf;--accent:#6d5dfc;--good:#27d394;--bad:#ff6878}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:radial-gradient(circle at top,#1b2743,#090e19 55%);color:var(--text);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100%;overscroll-behavior:none}
-body{min-height:100vh;touch-action:pan-y}.app{max-width:900px;margin:auto;padding:12px;padding-bottom:24px}
-header{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.brand{display:flex;align-items:center;gap:9px}.logo{font-size:30px}.title{font-weight:900;font-size:22px}.muted{color:var(--muted);font-size:12px}
-.stats{display:flex;gap:6px}.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:7px 10px;text-align:center}.stat b{display:block}.stat small{color:var(--muted)}
-.panel{background:#121a2bf2;border:1px solid var(--line);border-radius:18px;padding:12px}.bar{display:flex;justify-content:space-between;align-items:center;gap:7px;flex-wrap:wrap}.controls{display:flex;gap:6px;flex-wrap:wrap}
-.btn{background:var(--card);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px 11px;min-height:42px;font-weight:800;cursor:pointer}.btn:active{transform:scale(.98)}.primary{background:#40359a;border-color:#746aff}
-#status{text-align:center;min-height:24px;font-weight:800;margin:7px}.bad{color:var(--bad)}.good{color:var(--good)}
-.boardWrap{display:flex;justify-content:center;padding:3px 0 12px}#board{position:relative;width:min(760px,98vw);aspect-ratio:11/5;background:#080b12;border:3px solid #30394a;border-radius:16px;padding:8px;touch-action:none;user-select:none;-webkit-user-select:none}
-.grid{position:absolute;inset:8px;display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(5,1fr);gap:3px}.hole{border-radius:50%;background:#232a35;box-shadow:inset 0 3px 5px #000}.hole.filled:after{content:"";display:block;width:82%;height:82%;margin:9%;border-radius:50%;background:var(--piece);box-shadow:0 2px 4px #000}.hole.fixed:after{filter:brightness(1.06);box-shadow:0 0 0 2px rgba(255,255,255,.35),0 2px 4px #000}
-.pieceOnBoard{position:absolute;z-index:50;display:grid;gap:3px;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;filter:drop-shadow(0 5px 7px rgba(0,0,0,.35));cursor:grab}.pieceOnBoard.selected{filter:drop-shadow(0 6px 10px rgba(0,0,0,.55));outline:2px solid var(--accent);outline-offset:3px;border-radius:9px}.pieceOnBoard.fixedPiece{cursor:default;opacity:.94}.dot{width:var(--s);height:var(--s);border-radius:50%;background:var(--piece);box-shadow:0 2px 4px #000}
-.tray{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.piece{min-height:76px;background:var(--card);border:1px solid var(--line);border-radius:11px;display:flex;align-items:center;justify-content:center;position:relative;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}.piece.selected{outline:3px solid var(--accent)}.piece.drag{opacity:.28}.name{position:absolute;bottom:3px;font-size:10px;color:#d8deea}.shape{display:grid;gap:2px}
-.float{position:absolute;z-index:100;display:grid;gap:3px;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 5px 8px rgba(0,0,0,.35))}.float .dot{width:var(--s);height:var(--s)}
-.ghost{position:absolute;z-index:90;display:grid;gap:3px;pointer-events:none;opacity:.38}.ghost .dot{width:var(--s);height:var(--s);box-shadow:none}.ghost.invalid .dot{filter:grayscale(1)}
-.toolbar{position:absolute;z-index:160;display:flex;gap:5px;padding:5px;background:rgba(12,17,29,.94);border:1px solid #58647d;border-radius:12px;box-shadow:0 7px 20px rgba(0,0,0,.35);transform:translate(-50%,-100%);pointer-events:auto}.toolbtn{width:42px;height:38px;border:0;border-radius:9px;background:#27324a;color:#fff;font-size:20px;font-weight:900}.toolbtn:active{transform:scale(.94)}
-.progress{height:7px;background:#080c14;border-radius:20px;overflow:hidden;margin-top:9px}.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s}.hint{margin-top:8px;text-align:center;color:var(--muted);font-size:11px}
-@media(max-width:480px){.app{padding:8px}.tray{grid-template-columns:repeat(3,1fr)}.piece{min-height:68px}.stats{width:100%}.stat{flex:1}.btn{padding:8px 10px}.toolbtn{width:44px;height:40px}}
 
-#splash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:radial-gradient(circle at 50% 35%,#202d4e 0,#0b1020 55%,#060914 100%);transition:opacity .55s ease,visibility .55s ease}#splash.hide{opacity:0;visibility:hidden;pointer-events:none}.splashCard{text-align:center;transform:translateY(0);animation:splashIn .65s cubic-bezier(.2,.8,.2,1)}.splashLogo{display:grid;grid-template-columns:repeat(3,18px);gap:6px;justify-content:center;margin-bottom:14px;transform:rotate(-8deg)}.splashLogo span{width:18px;height:18px;border-radius:50%;background:#6d5dfc;box-shadow:0 3px 8px rgba(0,0,0,.4);animation:bounce 1.1s infinite ease-in-out}.splashLogo span:nth-child(2){animation-delay:.08s;background:#27d394}.splashLogo span:nth-child(3){animation-delay:.16s;background:#f2d400}.splashLogo span:nth-child(4){animation-delay:.24s;background:#ff5a16}.splashLogo span:nth-child(5){animation-delay:.32s;background:#e52c9b}.splashTitle{font-size:42px;line-height:1;font-weight:950;letter-spacing:5px}.splashSub{font-size:11px;letter-spacing:6px;color:#9aa8bf;margin:7px 0 25px 6px}.loader{width:190px;height:5px;margin:auto;background:#27324a;border-radius:99px;overflow:hidden}.loaderBar{height:100%;width:45%;border-radius:99px;background:#6d5dfc;animation:load 1.15s ease-in-out infinite}.splashLoading{font-size:12px;color:#9aa8bf;margin-top:11px}@keyframes load{0%{transform:translateX(-110%)}100%{transform:translateX(430%)}}@keyframes bounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-7px) scale(1.08)}}@keyframes splashIn{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
-</style>
-</head>
-<body>
-<div id="splash" aria-label="LONPOS wird geladen">
-  <div class="splashCard">
-    <div class="splashLogo"><span>●</span><span>●</span><span>●</span><span>●</span><span>●</span></div>
-    <div class="splashTitle">LONPOS</div>
-    <div class="splashSub">PUZZLE</div>
-    <div class="loader"><div class="loaderBar"></div></div>
-    <div class="splashLoading">Wird geladen…</div>
-  </div>
-</div>
-<div class="app">
-<header><div class="brand"><div class="logo">🧩</div><div><div class="title">LONPOS PUZZLE</div><div class="muted">55 Felder · 5×11 · iPhone Edition</div></div></div>
-<div class="stats"><div class="stat"><b id="lv">1</b><small>LEVEL</small></div><div class="stat"><b id="tm">00:00</b><small>ZEIT</small></div><div class="stat"><b id="sc">0</b><small>PUNKTE</small></div></div></header>
-<div class="panel">
-<div class="bar"><b>Level <span id="level">1</span> / 100</b><div class="controls"><button class="btn" id="levels">☰ Level</button><button class="btn" id="reset">↺ Reset</button></div></div>
-<div id="status">Eine Figur ist bereits platziert. Die anderen Teile kannst du direkt auf dem Feld bewegen, drehen und spiegeln.</div>
-<div class="boardWrap"><div id="board"><div id="grid" class="grid"></div></div></div>
-<div class="muted">TEILE</div><div id="tray" class="tray"></div>
-<div class="progress"><i id="bar"></i></div><div class="muted" id="prog">5 / 55 Felder</div>
-<div class="hint">Teil ziehen · auf dem Feld antippen → ↻ drehen oder 🪞 spiegeln · erneut ziehen zum Verschieben</div>
-</div></div>
-<script>
 const R=5,C=11,T=55;
 const defs=[
 {id:"blue",n:"Blau",c:"#1769d1",s:[[0,0],[0,1],[1,0],[2,0],[3,0]]},
@@ -127,7 +71,3 @@ window.addEventListener("resize",()=>{render();if(selected)showToolbar(pieces.fi
 board.addEventListener("pointerdown",e=>{if(e.target===board||e.target===grid){selected=null;removeToolbar();render()}});
 try{buildLevel()}catch(err){console.error(err);statusEl.className="bad";statusEl.textContent="Fehler beim Erzeugen des Levels. Bitte Seite neu laden."}
 if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js?v=4").catch(()=>{})}
-</script><script>
-(function(){const s=document.getElementById('splash');const hide=()=>{if(!s)return;requestAnimationFrame(()=>setTimeout(()=>s.classList.add('hide'),350));};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',hide,{once:true});else hide();setTimeout(()=>s&&s.classList.add('hide'),1800);})();
-</script>
-</body></html>
