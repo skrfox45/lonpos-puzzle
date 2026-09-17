@@ -155,10 +155,10 @@ function preview(e){
  // Deliberately do not render a second ghost copy. The single floating piece
  // is the only visual representation while dragging.
 }
-function beginDrag(p,e){
+function beginDrag(p,e,sourceOverride=null){
  if(!p||p.fixed||drag)return;
  selected=p.id;removeToolbar();
- const source=e.currentTarget;
+ const source=sourceOverride||e.currentTarget;
  if(source&&source.classList)source.classList.add("drag");
  const f=makeFloat(p);
  drag={p,f,source,ghost:null,row:null,col:null,valid:false,pointerId:e.pointerId,moved:true};
@@ -196,7 +196,7 @@ function boardStart(e){
    if(!moved && Math.hypot(dx,dy)>8){
      moved=true;
      cleanupPending();
-     beginDrag(p,ev);
+     beginDrag(p,ev,source);
    }
  };
  const onUp=(ev)=>{
