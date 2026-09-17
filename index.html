@@ -23,7 +23,7 @@ header{display:flex;justify-content:space-between;align-items:center;gap:10px;fl
 .boardWrap{display:flex;justify-content:center;padding:3px 0 14px;width:100%}#board{position:relative;width:min(760px,98vw);aspect-ratio:11/5;background:#080b12;border:3px solid #30394a;border-radius:16px;padding:8px;touch-action:none;user-select:none;-webkit-user-select:none}
 .grid{position:absolute;inset:8px;display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(5,1fr);gap:3px}.hole{border-radius:50%;background:#232a35;box-shadow:inset 0 3px 5px #000}.hole.filled:after{content:"";display:block;width:82%;height:82%;margin:9%;border-radius:50%;background:var(--piece);box-shadow:0 2px 4px #000}.hole.fixed:after{filter:brightness(1.06);box-shadow:0 0 0 2px rgba(255,255,255,.35),0 2px 4px #000}
 .pieceOnBoard{position:absolute;z-index:50;display:grid;gap:2px;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;filter:drop-shadow(0 5px 7px rgba(0,0,0,.35));cursor:grab}.pieceOnBoard.selected{filter:drop-shadow(0 6px 10px rgba(0,0,0,.55));outline:2px solid var(--accent);outline-offset:3px;border-radius:9px}.pieceOnBoard.fixedPiece{cursor:default;opacity:.94}.dot{width:var(--s);height:var(--s);border-radius:50%;background:var(--piece);box-shadow:0 2px 4px #000}
-.tray{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.piece{min-height:76px;background:var(--card);border:1px solid var(--line);border-radius:11px;display:flex;align-items:center;justify-content:center;position:relative;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}.piece.selected{outline:3px solid var(--accent)}.piece.drag{opacity:.28}.name{position:absolute;bottom:3px;font-size:10px;color:#d8deea}.shape{display:grid;gap:2px}
+.tray{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.piece{min-height:76px;background:var(--card);border:1px solid var(--line);border-radius:11px;display:flex;align-items:center;justify-content:center;position:relative;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}.piece.selected{outline:3px solid var(--accent)}.piece.drag{opacity:0;pointer-events:none}.name{position:absolute;bottom:3px;font-size:10px;color:#d8deea}.shape{display:grid;gap:2px}
 .float{position:absolute;z-index:100;display:grid;gap:3px;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 5px 8px rgba(0,0,0,.35))}.float .dot{width:var(--s);height:var(--s)}
 .ghost{position:absolute;z-index:90;display:grid;gap:3px;pointer-events:none;opacity:.38}.ghost .dot{width:var(--s);height:var(--s);box-shadow:none}.ghost.invalid .dot{filter:grayscale(1)}
 .toolbar{position:absolute;z-index:160;display:flex;gap:5px;padding:5px;max-width:calc(100% - 10px);background:rgba(12,17,29,.94);border:1px solid #58647d;border-radius:12px;box-shadow:0 7px 20px rgba(0,0,0,.35);transform:translate(-50%,-100%);pointer-events:auto}.toolbtn{width:42px;height:38px;border:0;border-radius:9px;background:#27324a;color:#fff;font-size:20px;font-weight:900}.toolbtn:active{transform:scale(.94)}
@@ -110,13 +110,62 @@ function drawBoardPiece(p){const m=metrics(),cell=Math.min(m.w,m.h)*.76,a=transf
 function drawTrayPiece(p){const card=document.createElement("div");card.className="piece"+(selected===p.id?" selected":"");card.dataset.id=p.id;card.style.setProperty("--piece",p.color);const a=transformCells(p),sz=shapeSize(a),q=document.createElement("div");q.className="shape";q.style.gridTemplateColumns=`repeat(${sz.w},20px)`;a.forEach(([r,c])=>{const d=document.createElement("div");d.className="dot";d.style.width="20px";d.style.height="20px";d.style.gridRow=r+1;d.style.gridColumn=c+1;q.append(d)});card.append(q);const n=document.createElement("div");n.className="name";n.textContent=p.name;card.append(n);card.addEventListener("pointerdown",trayStart,{passive:false});tray.append(card)}
 function makeFloat(p){const f=document.createElement("div");f.className="float";f.style.setProperty("--piece",p.color);const a=transformCells(p),sz=shapeSize(a),m=metrics(),s=Math.min(m.w,m.h)*.84;f.style.setProperty("--s",s+"px");f.style.gridTemplateColumns=`repeat(${sz.w},${s}px)`;a.forEach(([r,c])=>{const d=document.createElement("div");d.className="dot";d.style.gridRow=r+1;d.style.gridColumn=c+1;f.append(d)});board.append(f);return f}
 function ghostFor(p,row,col,valid){const g=document.createElement("div");g.className="ghost"+(valid?"":" invalid");g.style.setProperty("--piece",p.color);const a=transformCells(p),sz=shapeSize(a),m=metrics(),s=Math.min(m.w,m.h)*.84;g.style.setProperty("--s",s+"px");g.style.gridTemplateColumns=`repeat(${sz.w},${s}px)`;g.style.left=(8+col*m.w+(m.w-s)/2)+"px";g.style.top=(8+row*m.h+(m.h-s)/2)+"px";a.forEach(([r,c])=>{const d=document.createElement("div");d.className="dot";d.style.gridRow=r+1;d.style.gridColumn=c+1;g.append(d)});board.append(g);return g}
-function preview(e){if(!drag)return;e.preventDefault();const pt=pointInBoard(e),m=metrics(),a=transformCells(drag.p),sz=shapeSize(a);drag.f.style.left=pt.x-(sz.w*m.w)/2+"px";drag.f.style.top=pt.y-(sz.h*m.h)/2+"px";const col=Math.round((pt.x-8-(sz.w*m.w)/2)/m.w),row=Math.round((pt.y-8-(sz.h*m.h)/2)/m.h);const valid=validAt(drag.p,row,col,drag.p);if(drag.ghost)drag.ghost.remove();drag.ghost=ghostFor(drag.p,row,col,valid);drag.row=row;drag.col=col;drag.valid=valid}
-function beginDrag(p,e){selected=p.id;removeToolbar();const f=makeFloat(p);drag={p,f,ghost:null,row:null,col:null,valid:false};preview(e);window.addEventListener("pointermove",preview,{passive:false});window.addEventListener("pointerup",endDrag,{once:true});window.addEventListener("pointercancel",cancelDrag,{once:true});e.preventDefault()}
+function preview(e){if(!drag)return;e.preventDefault();const pt=pointInBoard(e),m=metrics(),a=transformCells(drag.p),sz=shapeSize(a);drag.f.style.left=pt.x+"px";drag.f.style.top=pt.y+"px";const col=Math.round((pt.x-8-(sz.w*m.w)/2)/m.w),row=Math.round((pt.y-8-(sz.h*m.h)/2)/m.h);const valid=validAt(drag.p,row,col,drag.p);if(drag.ghost)drag.ghost.remove();drag.ghost=ghostFor(drag.p,row,col,valid);drag.row=row;drag.col=col;drag.valid=valid}
+function beginDrag(p,e){
+  // One physical piece = one logical piece. Hide the original while dragging
+  // so the floating copy is only a visual drag representation, never a duplicate.
+  selected=p.id;removeToolbar();
+  const source=e.currentTarget;
+  if(source&&source.classList)source.classList.add("drag");
+  const f=makeFloat(p);
+  drag={p,f,source,ghost:null,row:null,col:null,valid:false};
+  preview(e);
+  window.addEventListener("pointermove",preview,{passive:false});
+  window.addEventListener("pointerup",endDrag,{once:true});
+  window.addEventListener("pointercancel",cancelDrag,{once:true});
+  e.preventDefault();
+}
 function trayStart(e){const p=pieces.find(x=>x.id===e.currentTarget.dataset.id);if(p)beginDrag(p,e)}
 function boardStart(e){const p=pieces.find(x=>x.id===e.currentTarget.dataset.id);if(!p)return;if(p.fixed){selected=null;removeToolbar();statusEl.className="";statusEl.textContent="🔒 Die Startfigur bleibt als Hinweis fest im Feld.";e.preventDefault();return}beginDrag(p,e)}
-function cleanupDrag(){if(!drag)return;drag.f.remove();if(drag.ghost)drag.ghost.remove();window.removeEventListener("pointermove",preview);window.removeEventListener("pointercancel",cancelDrag)}
-function cancelDrag(){if(!drag)return;const p=drag.p;cleanupDrag();drag=null;render();if(selected)showToolbar(pieces.find(x=>x.id===selected))}
-function endDrag(){if(!drag)return;const d=drag;cleanupDrag();drag=null;if(d.valid){d.p.placed=true;setPosition(d.p,d.row,d.col);selected=d.p.id;statusEl.className="good";statusEl.textContent="✔ Teil platziert. Tippe es an, um es weiter zu bearbeiten.";render();showToolbar(d.p);if(pieces.every(p=>p.placed))win()}else{statusEl.className="bad";statusEl.textContent="❌ Dort passt das Teil nicht hinein.";render();if(selected)showToolbar(d.p)}}
+function cleanupDrag(){
+  if(!drag)return;
+  if(drag.f)drag.f.remove();
+  if(drag.ghost)drag.ghost.remove();
+  if(drag.source&&drag.source.classList)drag.source.classList.remove("drag");
+  window.removeEventListener("pointermove",preview);
+  window.removeEventListener("pointercancel",cancelDrag);
+}
+function cancelDrag(){
+  if(!drag)return;
+  cleanupDrag();
+  drag=null;
+  selected=null;
+  removeToolbar();
+  render();
+}
+function endDrag(){
+  if(!drag)return;
+  const d=drag;
+  cleanupDrag();
+  drag=null;
+  if(d.valid){
+    // Commit exactly one placement. Never clone or append a second piece.
+    d.p.placed=true;
+    setPosition(d.p,d.row,d.col);
+    selected=null;
+    removeToolbar();
+    statusEl.className="good";
+    statusEl.textContent="✔ Teil platziert.";
+    render();
+    if(pieces.every(p=>p.placed))win();
+  }else{
+    selected=null;
+    removeToolbar();
+    statusEl.className="bad";
+    statusEl.textContent="❌ Dort passt das Teil nicht hinein.";
+    render();
+  }
+}
 function removeToolbar(){if(toolbar){toolbar.remove();toolbar=null}}
 function tryTransform(p,newRot,newMirror){const old={rot:p.rot,mirror:p.mirror,row:p.row,col:p.col,pos:p.pos.map(x=>[...x])};p.rot=newRot;p.mirror=newMirror;if(p.placed&&!validAt(p,p.row,p.col,p)){p.rot=old.rot;p.mirror=old.mirror;return false}if(p.placed)setPosition(p,p.row,p.col);return true}
 function showToolbar(p){if(!p||p.fixed){removeToolbar();return}removeToolbar();const el=document.createElement("div");el.className="toolbar";el.innerHTML='<button class="toolbtn" aria-label="Drehen">↻</button><button class="toolbtn" aria-label="Spiegeln">🪞</button>';el.querySelectorAll("button")[0].addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();if(tryTransform(p,(p.rot+1)%4,p.mirror)){render();showToolbar(p)}else{statusEl.className="bad";statusEl.textContent="❌ Diese Drehung passt hier nicht."}});el.querySelectorAll("button")[1].addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();if(tryTransform(p,p.rot,!p.mirror)){render();showToolbar(p)}else{statusEl.className="bad";statusEl.textContent="❌ Diese Spiegelung passt hier nicht."}});board.append(el);toolbar=el;positionToolbar(p)}
