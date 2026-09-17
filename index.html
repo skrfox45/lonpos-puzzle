@@ -122,10 +122,21 @@ document.getElementById("reset").onclick=()=>buildLevel();
 document.getElementById("levels").onclick=()=>{const n=Number(prompt("Level auswählen (1–100):",level));if(n>=1&&n<=100){level=n;localStorage.lonposLevel=level;buildLevel()}};
 window.addEventListener("resize",()=>{render();if(selected)showToolbar(pieces.find(p=>p.id===selected))});
 board.addEventListener("pointerdown",e=>{if(e.target===board||e.target===grid){selected=null;removeToolbar();render()}});
-let appReady=false;
-function hideSplash(){const s=document.getElementById("splash");if(!s||s.classList.contains("hide"))return;s.classList.add("hide");}
-try{buildLevel();appReady=true;requestAnimationFrame(()=>setTimeout(hideSplash,250));}catch(err){console.error(err);statusEl.className="bad";statusEl.textContent="Fehler beim Laden. Bitte Seite neu laden.";setTimeout(hideSplash,1200)}
-if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js?v=6").catch(()=>{})}
-setTimeout(hideSplash,2200);
+function hideSplash(){const s=document.getElementById("splash");if(!s)return;s.classList.add("hide");}
+function boot(){
+  try{
+    buildLevel();
+    requestAnimationFrame(()=>setTimeout(hideSplash,250));
+  }catch(err){
+    console.error("LONPOS boot error",err);
+    const st=document.getElementById("status");
+    if(st){st.className="bad";st.textContent="LONPOS konnte nicht geladen werden. Bitte neu laden.";}
+    hideSplash();
+  }
+}
+// Important: this version intentionally does NOT register a service worker.
+// This prevents an older cached PWA version from replacing the current game.
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
+setTimeout(hideSplash,2500);
 </script>
 </body></html>
