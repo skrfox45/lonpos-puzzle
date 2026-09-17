@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-title" content="LONPOS">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-192.png">
-<title>LONPOS Puzzle V13</title>
+<title>LONPOS Puzzle V16</title>
 <style>
 :root{--bg:#090e19;--panel:#121a2b;--card:#1a2539;--line:#303d57;--text:#f7f8fb;--muted:#9aa8bf;--accent:#6d5dfc;--good:#27d394;--bad:#ff6878}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -270,7 +270,15 @@ function endDrag(){
  }
 }
 function removeToolbar(){if(toolbar){toolbar.remove();toolbar=null}}
-function tryTransform(p,newRot,newMirror){const old={rot:p.rot,mirror:p.mirror,row:p.row,col:p.col,pos:p.pos.map(x=>[...x])};p.rot=newRot;p.mirror=newMirror;if(p.placed&&!validAt(p,p.row,p.col,p)){p.rot=old.rot;p.mirror=old.mirror;return false}if(p.placed)setPosition(p,p.row,p.col);return true}
+function tryTransform(p,newRot,newMirror){
+  if(!p||p.fixed)return false;
+  // Rotation/mirroring is allowed even when the transformed shape does not
+  // fit at its current location. The next drag/drop is what must be valid.
+  p.rot=newRot;
+  p.mirror=newMirror;
+  if(p.placed)setPosition(p,p.row,p.col);
+  return true;
+}
 function showToolbar(p){if(!p||p.fixed){removeToolbar();return}removeToolbar();const el=document.createElement("div");el.className="toolbar";el.innerHTML='<button class="toolbtn" aria-label="Drehen">↻</button><button class="toolbtn" aria-label="Spiegeln">🪞</button>';el.querySelectorAll("button")[0].addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();if(tryTransform(p,(p.rot+1)%4,p.mirror)){render();showToolbar(p)}else{statusEl.className="bad";statusEl.textContent="❌ Diese Drehung passt hier nicht."}});el.querySelectorAll("button")[1].addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();if(tryTransform(p,p.rot,!p.mirror)){render();showToolbar(p)}else{statusEl.className="bad";statusEl.textContent="❌ Diese Spiegelung passt hier nicht."}});board.append(el);toolbar=el;positionToolbar(p)}
 function positionToolbar(p){
   if(!toolbar||!p||!p.placed)return;
