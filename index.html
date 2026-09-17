@@ -22,10 +22,13 @@ header{display:flex;justify-content:space-between;align-items:center;gap:10px;fl
 #status{text-align:center;min-height:24px;font-weight:800;margin:7px}.bad{color:var(--bad)}.good{color:var(--good)}
 .boardWrap{display:flex;justify-content:center;padding:3px 0 12px}#board{position:relative;width:min(760px,98vw);aspect-ratio:11/5;background:#080b12;border:3px solid #30394a;border-radius:16px;padding:8px;touch-action:none;user-select:none;-webkit-user-select:none}
 .grid{position:absolute;inset:8px;display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(5,1fr);gap:3px}.hole{border-radius:50%;background:#232a35;box-shadow:inset 0 3px 5px #000}.hole.filled:after{content:"";display:block;width:82%;height:82%;margin:9%;border-radius:50%;background:var(--piece);box-shadow:0 2px 4px #000}.hole.fixed:after{filter:brightness(1.06);box-shadow:0 0 0 2px rgba(255,255,255,.35),0 2px 4px #000}
-.tray{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.piece{min-height:76px;background:var(--card);border:1px solid var(--line);border-radius:11px;display:flex;align-items:center;justify-content:center;position:relative;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}.piece.selected{outline:3px solid var(--accent)}.piece.drag{opacity:.28}.piece.fixedPiece{opacity:.5}.name{position:absolute;bottom:3px;font-size:10px;color:#d8deea}.shape{display:grid;gap:2px}.dot{width:20px;height:20px;border-radius:50%;background:var(--piece);box-shadow:0 2px 4px #000}.float{position:absolute;z-index:100;display:grid;gap:3px;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 5px 8px rgba(0,0,0,.35))}.float .dot{width:var(--s);height:var(--s)}
-.ghost{position:absolute;z-index:90;display:grid;gap:3px;pointer-events:none;opacity:.38;transform:translate(0,0)}.ghost .dot{width:var(--s);height:var(--s);box-shadow:none}.ghost.invalid .dot{filter:grayscale(1)}
+.pieceOnBoard{position:absolute;z-index:50;display:grid;gap:3px;pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;filter:drop-shadow(0 5px 7px rgba(0,0,0,.35));cursor:grab}.pieceOnBoard.selected{filter:drop-shadow(0 6px 10px rgba(0,0,0,.55));outline:2px solid var(--accent);outline-offset:3px;border-radius:9px}.pieceOnBoard.fixedPiece{cursor:default;opacity:.94}.dot{width:var(--s);height:var(--s);border-radius:50%;background:var(--piece);box-shadow:0 2px 4px #000}
+.tray{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.piece{min-height:76px;background:var(--card);border:1px solid var(--line);border-radius:11px;display:flex;align-items:center;justify-content:center;position:relative;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}.piece.selected{outline:3px solid var(--accent)}.piece.drag{opacity:.28}.name{position:absolute;bottom:3px;font-size:10px;color:#d8deea}.shape{display:grid;gap:2px}
+.float{position:absolute;z-index:100;display:grid;gap:3px;transform:translate(-50%,-50%);pointer-events:none;filter:drop-shadow(0 5px 8px rgba(0,0,0,.35))}.float .dot{width:var(--s);height:var(--s)}
+.ghost{position:absolute;z-index:90;display:grid;gap:3px;pointer-events:none;opacity:.38}.ghost .dot{width:var(--s);height:var(--s);box-shadow:none}.ghost.invalid .dot{filter:grayscale(1)}
+.toolbar{position:absolute;z-index:160;display:flex;gap:5px;padding:5px;background:rgba(12,17,29,.94);border:1px solid #58647d;border-radius:12px;box-shadow:0 7px 20px rgba(0,0,0,.35);transform:translate(-50%,-100%);pointer-events:auto}.toolbtn{width:42px;height:38px;border:0;border-radius:9px;background:#27324a;color:#fff;font-size:20px;font-weight:900}.toolbtn:active{transform:scale(.94)}
 .progress{height:7px;background:#080c14;border-radius:20px;overflow:hidden;margin-top:9px}.progress i{display:block;height:100%;width:0;background:var(--accent);transition:width .15s}.hint{margin-top:8px;text-align:center;color:var(--muted);font-size:11px}
-@media(max-width:480px){.app{padding:8px}.tray{grid-template-columns:repeat(3,1fr)}.dot{width:17px;height:17px}.piece{min-height:68px}.stats{width:100%}.stat{flex:1}.btn{padding:8px 10px}}
+@media(max-width:480px){.app{padding:8px}.tray{grid-template-columns:repeat(3,1fr)}.piece{min-height:68px}.stats{width:100%}.stat{flex:1}.btn{padding:8px 10px}.toolbtn{width:44px;height:40px}}
 </style>
 </head>
 <body>
@@ -33,129 +36,107 @@ header{display:flex;justify-content:space-between;align-items:center;gap:10px;fl
 <header><div class="brand"><div class="logo">🧩</div><div><div class="title">LONPOS PUZZLE</div><div class="muted">55 Felder · 5×11 · iPhone Edition</div></div></div>
 <div class="stats"><div class="stat"><b id="lv">1</b><small>LEVEL</small></div><div class="stat"><b id="tm">00:00</b><small>ZEIT</small></div><div class="stat"><b id="sc">0</b><small>PUNKTE</small></div></div></header>
 <div class="panel">
-<div class="bar"><b>Level <span id="level">1</span> / 100</b><div class="controls"><button class="btn" id="levels">☰ Level</button><button class="btn" id="rot">↻ Drehen</button><button class="btn" id="mirror">🪞 Spiegeln</button><button class="btn" id="reset">↺ Reset</button></div></div>
-<div id="status">Eine Figur ist bereits platziert. Ziehe die übrigen Teile ins Feld.</div>
+<div class="bar"><b>Level <span id="level">1</span> / 100</b><div class="controls"><button class="btn" id="levels">☰ Level</button><button class="btn" id="reset">↺ Reset</button></div></div>
+<div id="status">Eine Figur ist bereits platziert. Die anderen Teile kannst du direkt auf dem Feld bewegen, drehen und spiegeln.</div>
 <div class="boardWrap"><div id="board"><div id="grid" class="grid"></div></div></div>
 <div class="muted">TEILE</div><div id="tray" class="tray"></div>
 <div class="progress"><i id="bar"></i></div><div class="muted" id="prog">5 / 55 Felder</div>
-<div class="hint">Teil antippen, gedrückt halten und ziehen · ↻ drehen · 🪞 spiegeln</div>
+<div class="hint">Teil ziehen · auf dem Feld antippen → ↻ drehen oder 🪞 spiegeln · erneut ziehen zum Verschieben</div>
 </div></div>
 <script>
 const R=5,C=11,T=55;
-// Die 12 Formen entsprechen dem gezeigten 5×11-LONPOS-Aufbau und ergeben zusammen 55 Kugeln.
+// Exakte Formen nach den Fotos. Jede Liste enthält Rasterpositionen [Zeile,Spalte].
 const defs=[
 {id:"blue",n:"Blau",c:"#1769d1",s:[[0,0],[0,1],[1,0],[2,0],[3,0]]},
-{id:"green",n:"Grün",c:"#18b879",s:[[0,1],[1,0],[1,1],[2,0],[3,0]]},
+{id:"green",n:"Grün",c:"#18b879",s:[[0,2],[0,3],[1,0],[1,1],[1,2]]},
 {id:"yellow",n:"Gelb",c:"#f2d400",s:[[0,0],[0,1],[1,0],[2,0],[2,1]]},
-{id:"white5",n:"Weiß",c:"#e8edf2",s:[[0,1],[1,0],[1,1],[1,2],[2,1]]},
-{id:"orange",n:"Orange",c:"#ff5a16",s:[[0,0],[0,1],[0,2],[1,1]]},
-{id:"white3",n:"Weiß 3",c:"#e8edf2",s:[[0,0],[0,1],[1,0]]},
+{id:"white5",n:"Weiß +",c:"#e8edf2",s:[[0,1],[1,0],[1,1],[1,2],[2,1]]},
+{id:"orange",n:"Orange",c:"#ff5a16",s:[[0,0],[0,1],[1,0],[2,0]]},
+{id:"white3",n:"Weiß 3",c:"#e8edf2",s:[[0,0],[1,0],[1,1]]},
 {id:"purple",n:"Lila",c:"#7045b5",s:[[0,0],[1,0],[2,0],[3,0]]},
-{id:"pink",n:"Pink",c:"#e52c9b",s:[[0,2],[1,1],[1,2],[2,0],[2,1]]},
+{id:"pink",n:"Pink",c:"#e52c9b",s:[[0,1],[0,2],[1,0],[1,1],[2,0]]},
 {id:"cyan",n:"Hellblau",c:"#79dbe8",s:[[0,2],[1,2],[2,0],[2,1],[2,2]]},
-{id:"red",n:"Rot",c:"#e51c2a",s:[[0,0],[0,1],[1,0],[1,1],[1,2]]},
+{id:"red",n:"Rot",c:"#e51c2a",s:[[0,1],[1,0],[1,1],[2,0],[2,1]]},
 {id:"lightpink",n:"Hellrosa",c:"#f3c8c9",s:[[0,1],[1,0],[1,1],[1,2],[1,3]]},
 {id:"lightgreen",n:"Hellgrün",c:"#75df43",s:[[0,0],[0,1],[1,0],[1,1]]}
 ];
-const total=defs.reduce((n,d)=>n+d.s.length,0); if(total!==55) throw new Error("Formen ergeben nicht 55 Felder");
-let pieces=[],selected=null,drag=null,rotations={},mirrors={},level=+(localStorage.lonposLevel||1),score=+(localStorage.lonposScore||0),seconds=0,timer,seed=0;
+const total=defs.reduce((n,d)=>n+d.s.length,0);if(total!==55)throw new Error("Formen ergeben nicht 55 Felder");
+let pieces=[],selected=null,drag=null,toolbar=null,level=+(localStorage.lonposLevel||1),score=+(localStorage.lonposScore||0),seconds=0,timer;
 const board=document.getElementById("board"),grid=document.getElementById("grid"),tray=document.getElementById("tray"),statusEl=document.getElementById("status"),levelEl=document.getElementById("level"),lv=document.getElementById("lv"),tm=document.getElementById("tm"),sc=document.getElementById("sc"),bar=document.getElementById("bar"),prog=document.getElementById("prog");
 function fmt(s){return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
 function norm(a){let r=Math.min(...a.map(x=>x[0])),c=Math.min(...a.map(x=>x[1]));return a.map(x=>[x[0]-r,x[1]-c]).sort((x,y)=>x[0]-y[0]||x[1]-y[1])}
 function rotate(a){return norm(a.map(x=>[x[1],-x[0]]))}
 function mirrorShape(a){return norm(a.map(x=>[x[0],-x[1]]))}
-function transformCells(p){let a=p.cells.map(x=>[...x]);if(mirrors[p.id])a=mirrorShape(a);for(let i=0;i<(rotations[p.id]||0)%4;i++)a=rotate(a);return norm(a)}
+function transformCells(p){let a=p.base.map(x=>[...x]);if(p.mirror)a=mirrorShape(a);for(let i=0;i<p.rot;i++)a=rotate(a);return norm(a)}
 function shapeSize(a){return{w:Math.max(...a.map(x=>x[1]))+1,h:Math.max(...a.map(x=>x[0]))+1}}
-// Deterministischer Zufall pro Level, damit ein Level nach Reset identisch bleibt.
-function rngFactory(n){let x=(n*0x9e3779b1+0x1234567)>>>0;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return (x>>>0)/4294967296}}
+function rngFactory(n){let x=(n*0x9e3779b1+0x1234567)>>>0;return()=>{x^=x<<13;x^=x>>>17;x^=x<<5;return(x>>>0)/4294967296}}
 function shuffled(arr,rng){let a=arr.slice();for(let i=a.length-1;i>0;i--){let j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function placementsFor(p){let a=transformCells(p),maxR=R-(Math.max(...a.map(x=>x[0]))+1),maxC=C-(Math.max(...a.map(x=>x[1]))+1),out=[];for(let r=0;r<=maxR;r++)for(let c=0;c<=maxC;c++)out.push([r,c]);return out}
-function canPlace(p,pos,used){let a=transformCells(p),[row,col]=pos;return a.every(([r,c])=>row+r>=0&&row+r<R&&col+c>=0&&col+c<C&&!used.has((row+r)+","+(col+c)))}
-function solveTiling(order, used=new Set(), placed=[], rng=Math.random, limit=1){
- if(order.length===0)return placed;
- let bestIndex=-1,bestOptions=null;
- for(let i=0;i<order.length;i++){
-   let p=order[i], opts=placementsFor(p).filter(pos=>canPlace(p,pos,used));
-   if(!opts.length)return null;
-   if(!bestOptions||opts.length<bestOptions.length){bestOptions=opts;bestIndex=i;if(opts.length===1)break;}
+function orientations(base){let out=[];for(let m=0;m<2;m++)for(let r=0;r<4;r++){let a=norm(m?mirrorShape(base):base);for(let i=0;i<r;i++)a=rotate(a);let key=JSON.stringify(a);if(!out.some(o=>o.key===key))out.push({cells:a,rot:r,mirror:!!m,key})}return out}
+function allPlacements(p){let out=[];for(const o of orientations(p.base)){let sz=shapeSize(o.cells);for(let r=0;r<=R-sz.h;r++)for(let c=0;c<=C-sz.w;c++)out.push({r,c,rot:o.rot,mirror:o.mirror,cells:o.cells})}return out}
+function canCells(cells,row,col,used){return cells.every(([r,c])=>row+r>=0&&row+r<R&&col+c>=0&&col+c<C&&!used.has((row+r)+","+(col+c)))}
+function solveTiling(order,used,placed,rng){
+ if(order.length===0)return placed.slice();
+ let best=null;
+ for(const p of order){let opts=allPlacements(p).filter(x=>canCells(x.cells,x.r,x.c,used));if(!opts.length)return null;if(!best||opts.length<best.opts.length)best={p,opts};}
+ let rest=order.filter(p=>p!==best.p);
+ for(const o of shuffled(best.opts,rng)){
+   let keys=[];for(const [r,c] of o.cells){let k=(o.r+r)+","+(o.c+c);used.add(k);keys.push(k)}
+   placed.push({id:best.p.id,row:o.r,col:o.c,rot:o.rot,mirror:o.mirror});
+   let res=solveTiling(rest,used,placed,rng);if(res)return res;
+   placed.pop();keys.forEach(k=>used.delete(k));
  }
- let p=order[bestIndex], rest=order.slice(0,bestIndex).concat(order.slice(bestIndex+1));
- bestOptions=shuffled(bestOptions,rng);
- for(let pos of bestOptions){let a=transformCells(p),added=[];for(let [r,c] of a){let k=(pos[0]+r)+","+(pos[1]+c);used.add(k);added.push(k)}placed.push({id:p.id,pos:[...pos]});let res=solveTiling(rest,used,placed,rng,limit);if(res)return res;placed.pop();added.forEach(k=>used.delete(k))}
  return null;
 }
+function makePieces(){return defs.map(d=>({id:d.id,name:d.n,color:d.c,base:d.s.map(x=>[...x]),rot:0,mirror:false,placed:false,fixed:false,pos:[]}))}
 function buildLevel(){
- seed=level;
- const rng=rngFactory(seed);
- const base=defs.map(d=>({id:d.id,name:d.n,color:d.c,cells:d.s.map(x=>[...x]),placed:false,fixed:false,pos:[]}));
- // Wir verwenden den vollständigen 5×11-Aufbau aus dem Referenzfoto als garantiert lösbare Grundlösung.
- const reference={
-  blue:[[0,0],[0,1],[1,0],[2,0],[3,0]],
-  green:[[0,2],[1,1],[1,2],[2,1],[3,1]],
-  yellow:[[0,3],[0,4],[1,3],[2,3],[2,4]],
-  white5:[[0,5],[1,4],[1,5],[1,6],[2,5]],
-  orange:[[0,6],[0,7],[0,8],[1,8]],
-  white3:[[0,9],[0,10],[1,9]],
-  purple:[[1,10],[2,10],[3,10],[4,10]],
-  pink:[[1,7],[2,6],[2,7],[3,5],[3,6]],
-  cyan:[[2,2],[3,2],[4,0],[4,1],[4,2]],
-  red:[[3,3],[3,4],[4,3],[4,4],[4,5]],
-  lightpink:[[3,7],[4,6],[4,7],[4,8],[4,9]],
-  lightgreen:[[2,8],[2,9],[3,8],[3,9]]
- };
- // Vier Symmetrien erhalten das rechteckige 5×11-Feld: Identität, horizontal,
- // vertikal und beidseitig gespiegelt. Dadurch wechseln Lage und Orientierung der Vorgabe.
- const sym=Math.floor(rng()*4), fixedIndex=Math.floor(rng()*base.length);
- function symCell(r,c){
-   if(sym===1)return [r,C-1-c];
-   if(sym===2)return [R-1-r,c];
-   if(sym===3)return [R-1-r,C-1-c];
-   return [r,c];
- }
- base.forEach((p,i)=>{
-   p.pos=reference[p.id].map(([r,c])=>symCell(r,c));
-   p.fixed=i===fixedIndex;
-   p.placed=p.fixed;
-   // Die übrigen Teile starten bewusst in unterschiedlichen Orientierungen.
-   rotations[p.id]=Math.floor(rng()*4);
-   mirrors[p.id]=rng()<.5;
- });
- pieces=shuffled(base,rng);
- seconds=0;clearInterval(timer);tm.textContent="00:00";timer=setInterval(()=>{seconds++;tm.textContent=fmt(seconds)},1000);
- selected=null;statusEl.className="";statusEl.textContent="Eine Figur ist bereits platziert. Ziehe die übrigen Teile ins Feld.";render();updateStats();
+ const rng=rngFactory(level),base=makePieces();
+ // Ein zufälliges, garantiert lösbares Gesamtbild wird zuerst berechnet.
+ const solution=solveTiling(shuffled(base,rng),new Set(),[],rng);
+ if(!solution){alert("Dieses Level konnte nicht erzeugt werden. Bitte Reset versuchen.");return}
+ const fixedIndex=Math.floor(rng()*solution.length), fixedSol=solution[fixedIndex];
+ base.forEach(p=>{let s=solution.find(x=>x.id===p.id);p.rot=s.rot;p.mirror=s.mirror;p.pos=transformCells(p).map(([r,c])=>[s.row+r,s.col+c]);p.placed=p.id===fixedSol.id;p.fixed=p.id===fixedSol.id});
+ // Für die nicht platzierten Teile wird die Lösungsausrichtung nicht gezeigt: Sie starten neutral.
+ base.forEach(p=>{if(!p.fixed){p.rot=0;p.mirror=false;p.placed=false;p.pos=[]}});
+ pieces=shuffled(base,rng);selected=null;removeToolbar();seconds=0;clearInterval(timer);tm.textContent="00:00";timer=setInterval(()=>{seconds++;tm.textContent=fmt(seconds)},1000);
+ statusEl.className="";statusEl.textContent="Eine Figur ist bereits platziert. Ziehe die anderen Teile ins Feld.";render();updateStats();
 }
 function updateStats(){levelEl.textContent=level;lv.textContent=level;sc.textContent=score}
-function occupied(except){let s=new Set();pieces.forEach(p=>{if(p.placed&&p!==except)p.pos.forEach(x=>s.add(x[0]+","+x[1]))});return s}
-function render(){
- grid.innerHTML="";let map=new Map();pieces.forEach(p=>{if(p.placed)p.pos.forEach(x=>map.set(x[0]+","+x[1],p))});
- for(let r=0;r<R;r++)for(let c=0;c<C;c++){let h=document.createElement("div");h.className="hole";let p=map.get(r+","+c);if(p){h.classList.add("filled");if(p.fixed)h.classList.add("fixed");h.style.setProperty("--piece",p.color)}grid.appendChild(h)}
- tray.innerHTML="";
- pieces.filter(p=>!p.fixed&&!p.placed).forEach(p=>{
-   let card=document.createElement("div");card.className="piece"+(selected===p.id?" selected":"");card.dataset.id=p.id;card.style.setProperty("--piece",p.color);
-   let a=transformCells(p),sz=shapeSize(a),q=document.createElement("div");q.className="shape";q.style.gridTemplateColumns=`repeat(${sz.w},20px)`;
-   a.forEach(([r,c])=>{let d=document.createElement("div");d.className="dot";d.style.gridRow=r+1;d.style.gridColumn=c+1;q.appendChild(d)});
-   card.append(q);let n=document.createElement("div");n.className="name";n.textContent=p.name;card.append(n);card.addEventListener("pointerdown",start,{passive:false});tray.append(card)
- });
- let count=pieces.filter(p=>p.placed).reduce((n,p)=>n+p.pos.length,0);bar.style.width=(count/T*100)+"%";prog.textContent=count+" / "+T+" Felder";
-}
+function occupied(except){let s=new Set();for(const p of pieces){if(p.placed&&p!==except)for(const x of p.pos)s.add(x[0]+","+x[1])}return s}
 function metrics(){let g=grid.getBoundingClientRect();return{g,w:g.width/C,h:g.height/R}}
 function pointInBoard(e){let r=board.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
-function floating(p){let f=document.createElement("div");f.className="float";f.style.setProperty("--piece",p.color);let a=transformCells(p),sz=shapeSize(a),m=metrics(),s=Math.min(m.w,m.h)*.84;f.style.setProperty("--s",s+"px");f.style.gridTemplateColumns=`repeat(${sz.w},${s}px)`;a.forEach(([r,c])=>{let d=document.createElement("div");d.className="dot";d.style.gridRow=r+1;d.style.gridColumn=c+1;f.append(d)});board.append(f);return f}
-function ghostFor(p,row,col,valid){let g=document.createElement("div");g.className="ghost"+(valid?"":" invalid");g.style.setProperty("--piece",p.color);let a=transformCells(p),sz=shapeSize(a),m=metrics(),s=Math.min(m.w,m.h)*.84;g.style.setProperty("--s",s+"px");g.style.gridTemplateColumns=`repeat(${sz.w},${s}px)`;g.style.left=(8+col*m.w+(m.w-s)/2)+"px";g.style.top=(8+row*m.h+(m.h-s)/2)+"px";a.forEach(([r,c])=>{let d=document.createElement("div");d.className="dot";d.style.gridRow=r+1;d.style.gridColumn=c+1;g.append(d)});board.append(g);return g}
-function preview(e){if(!drag)return;e.preventDefault();let pt=pointInBoard(e),m=metrics(),a=transformCells(drag.p),sz=shapeSize(a);drag.f.style.left=pt.x+"px";drag.f.style.top=pt.y+"px";let col=Math.round((pt.x-8-(sz.w*m.w)/2)/m.w),row=Math.round((pt.y-8-(sz.h*m.h)/2)/m.h);col=Math.max(-2,Math.min(C+1,col));row=Math.max(-2,Math.min(R+1,row));let used=occupied(drag.p),valid=canPlace(drag.p,[row,col],used);if(drag.ghost)drag.ghost.remove();drag.ghost=ghostFor(drag.p,row,col,valid);drag.row=row;drag.col=col;drag.valid=valid}
-function start(e){let p=pieces.find(x=>x.id===e.currentTarget.dataset.id);if(!p||p.fixed)return;selected=p.id;statusEl.className="";statusEl.textContent="Teil bewegen und passend ins Raster setzen.";render();let card=document.querySelector(`.piece[data-id="${CSS.escape(p.id)}"]`),f=floating(p);drag={p,f,card,ghost:null,row:null,col:null,valid:false};card.classList.add("drag");preview(e);window.addEventListener("pointermove",preview,{passive:false});window.addEventListener("pointerup",end,{once:true});window.addEventListener("pointercancel",cancel,{once:true});e.preventDefault();try{card.setPointerCapture(e.pointerId)}catch(_){}
+function render(){
+ grid.innerHTML="";for(let r=0;r<R;r++)for(let c=0;c<C;c++){let h=document.createElement("div");h.className="hole";h.dataset.cell=r+","+c;grid.append(h)}
+ for(const p of pieces.filter(x=>x.placed))drawBoardPiece(p);
+ tray.innerHTML="";for(const p of pieces.filter(x=>!x.fixed&&!x.placed))drawTrayPiece(p);
+ let count=pieces.filter(p=>p.placed).reduce((n,p)=>n+p.pos.length,0);bar.style.width=(count/T*100)+"%";prog.textContent=count+" / "+T+" Felder";
 }
-function cleanup(){if(!drag)return;drag.f.remove();if(drag.ghost)drag.ghost.remove();window.removeEventListener("pointermove",preview);window.removeEventListener("pointercancel",cancel)}
-function cancel(){if(!drag)return;cleanup();drag=null;render()}
-function end(e){if(!drag)return;let d=drag;let valid=d.valid,row=d.row,col=d.col;cleanup();drag=null;if(valid){d.p.placed=true;d.p.pos=transformCells(d.p).map(([r,c])=>[row+r,col+c]);selected=null;statusEl.className="good";statusEl.textContent="✔ Teil platziert.";render();if(pieces.every(p=>p.placed))win()}else{statusEl.className="bad";statusEl.textContent="❌ Dort passt das Teil nicht hinein.";render()}}
+function drawBoardPiece(p){
+ const m=metrics(),cell=Math.min(m.w,m.h)*.84,a=transformCells(p),sz=shapeSize(a);let el=document.createElement("div");el.className="pieceOnBoard"+(selected===p.id?" selected":"")+(p.fixed?" fixedPiece":"");el.dataset.id=p.id;el.style.setProperty("--piece",p.color);el.style.setProperty("--s",cell+"px");el.style.gridTemplateColumns=`repeat(${sz.w},${cell}px)`;
+ const left=8+p.pos[0][1]*m.w+(m.w-cell)/2,top=8+p.pos[0][0]*m.h+(m.h-cell)/2;el.style.left=left+"px";el.style.top=top+"px";
+ a.forEach(([r,c])=>{let d=document.createElement("div");d.className="dot";d.style.gridRow=r+1;d.style.gridColumn=c+1;el.append(d)});
+ el.addEventListener("pointerdown",boardStart,{passive:false});board.append(el);
+}
+function drawTrayPiece(p){
+ let card=document.createElement("div");card.className="piece"+(selected===p.id?" selected":"");card.dataset.id=p.id;card.style.setProperty("--piece",p.color);let a=transformCells(p),sz=shapeSize(a),q=document.createElement("div");q.className="shape";q.style.gridTemplateColumns=`repeat(${sz.w},20px)`;a.forEach(([r,c])=>{let d=document.createElement("div");d.className="dot";d.style.width="20px";d.style.height="20px";d.style.gridRow=r+1;d.style.gridColumn=c+1;q.append(d)});card.append(q);let n=document.createElement("div");n.className="name";n.textContent=p.name;card.append(n);card.addEventListener("pointerdown",trayStart,{passive:false});tray.append(card);
+}
+function makeFloat(p){let f=document.createElement("div");f.className="float";f.style.setProperty("--piece",p.color);let a=transformCells(p),sz=shapeSize(a),m=metrics(),s=Math.min(m.w,m.h)*.84;f.style.setProperty("--s",s+"px");f.style.gridTemplateColumns=`repeat(${sz.w},${s}px)`;a.forEach(([r,c])=>{let d=document.createElement("div");d.className="dot";d.style.gridRow=r+1;d.style.gridColumn=c+1;f.append(d)});board.append(f);return f}
+function ghostFor(p,row,col,valid){let g=document.createElement("div");g.className="ghost"+(valid?"":" invalid");g.style.setProperty("--piece",p.color);let a=transformCells(p),sz=shapeSize(a),m=metrics(),s=Math.min(m.w,m.h)*.84;g.style.setProperty("--s",s+"px");g.style.gridTemplateColumns=`repeat(${sz.w},${s}px)`;g.style.left=(8+col*m.w+(m.w-s)/2)+"px";g.style.top=(8+row*m.h+(m.h-s)/2)+"px";a.forEach(([r,c])=>{let d=document.createElement("div");d.className="dot";d.style.gridRow=r+1;d.style.gridColumn=c+1;g.append(d)});board.append(g);return g}
+function preview(e){if(!drag)return;e.preventDefault();let pt=pointInBoard(e),m=metrics(),a=transformCells(drag.p),sz=shapeSize(a);drag.f.style.left=pt.x-(sz.w*m.w)/2+"px";drag.f.style.top=pt.y-(sz.h*m.h)/2+"px";let col=Math.round((pt.x-8-(sz.w*m.w)/2)/m.w),row=Math.round((pt.y-8-(sz.h*m.h)/2)/m.h);let used=occupied(drag.p),valid=canCells(a,row,col,used);if(drag.ghost)drag.ghost.remove();drag.ghost=ghostFor(drag.p,row,col,valid);drag.row=row;drag.col=col;drag.valid=valid}
+function beginDrag(p,e){selected=p.id;removeToolbar();let f=makeFloat(p);drag={p,f,ghost:null,row:null,col:null,valid:false};preview(e);window.addEventListener("pointermove",preview,{passive:false});window.addEventListener("pointerup",endDrag,{once:true});window.addEventListener("pointercancel",cancelDrag,{once:true});e.preventDefault()}
+function trayStart(e){let p=pieces.find(x=>x.id===e.currentTarget.dataset.id);if(!p)return;beginDrag(p,e)}
+function boardStart(e){let p=pieces.find(x=>x.id===e.currentTarget.dataset.id);if(!p)return;selected=p.id;showToolbar(p);if(p.fixed){statusEl.className="";statusEl.textContent="🔒 Die Startfigur bleibt als Hinweis fest im Feld.";render();showToolbar(p);e.preventDefault();return}beginDrag(p,e)}
+function cleanupDrag(){if(!drag)return;drag.f.remove();if(drag.ghost)drag.ghost.remove();window.removeEventListener("pointermove",preview);window.removeEventListener("pointercancel",cancelDrag)}
+function cancelDrag(){if(!drag)return;cleanupDrag();drag=null;render();if(selected)showToolbar(pieces.find(p=>p.id===selected))}
+function endDrag(){if(!drag)return;let d=drag,valid=d.valid,row=d.row,col=d.col;cleanupDrag();drag=null;if(valid){d.p.placed=true;d.p.pos=transformCells(d.p).map(([r,c])=>[row+r,col+c]);selected=d.p.id;statusEl.className="good";statusEl.textContent="✔ Teil platziert. Tippe es an, um es weiter zu bearbeiten.";render();showToolbar(d.p);if(pieces.every(p=>p.placed))win()}else{statusEl.className="bad";statusEl.textContent="❌ Dort passt das Teil nicht hinein.";render();if(selected)showToolbar(d.p)}}
+function removeToolbar(){if(toolbar){toolbar.remove();toolbar=null}}
+function showToolbar(p){if(!p||p.fixed){removeToolbar();return}removeToolbar();let el=document.createElement("div");el.className="toolbar";el.innerHTML='<button class="toolbtn" aria-label="Drehen">↻</button><button class="toolbtn" aria-label="Spiegeln">🪞</button>';el.querySelectorAll("button")[0].addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();p.rot=(p.rot+1)%4;render();showToolbar(p)});el.querySelectorAll("button")[1].addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();p.mirror=!p.mirror;render();showToolbar(p)});board.append(el);toolbar=el;positionToolbar(p)}
+function positionToolbar(p){if(!toolbar||!p||!p.placed)return;let m=metrics(),xs=p.pos.map(x=>x[1]),ys=p.pos.map(x=>x[0]),cx=8+((Math.min(...xs)+Math.max(...xs)+1)/2)*m.w,cy=8+Math.min(...ys)*m.h;toolbar.style.left=cx+"px";toolbar.style.top=Math.max(8,cy-5)+"px"}
 function win(){clearInterval(timer);let gain=Math.max(100,1000-seconds*3);score+=gain;localStorage.lonposScore=score;let done=JSON.parse(localStorage.lonposDone||"[]");if(!done.includes(level))done.push(level);localStorage.lonposDone=JSON.stringify(done);updateStats();setTimeout(()=>{alert("🎉 Level "+level+" geschafft!\nZeit: "+fmt(seconds)+"\n+"+gain+" Punkte");if(level<100){level++;localStorage.lonposLevel=level;buildLevel()}},120)}
-document.getElementById("rot").onclick=()=>{if(!selected){statusEl.className="bad";statusEl.textContent="Wähle zuerst ein Teil.";return}rotations[selected]=(rotations[selected]||0)+1;render()};
-document.getElementById("mirror").onclick=()=>{if(!selected){statusEl.className="bad";statusEl.textContent="Wähle zuerst ein Teil.";return}mirrors[selected]=!mirrors[selected];render()};
 document.getElementById("reset").onclick=()=>buildLevel();
 document.getElementById("levels").onclick=()=>{let n=prompt("Level auswählen (1–100):",level);n=Number(n);if(n>=1&&n<=100){level=n;localStorage.lonposLevel=level;buildLevel()}};
-window.addEventListener("resize",()=>{if(!drag)render()});
-buildLevel();
-if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{});}
+window.addEventListener("resize",()=>{render();if(selected)showToolbar(pieces.find(p=>p.id===selected))});
+board.addEventListener("pointerdown",e=>{if(e.target===board||e.target===grid) {selected=null;removeToolbar();render()}});
+buildLevel();if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js?v=3").catch(()=>{})}
 </script>
 </body>
 </html>
