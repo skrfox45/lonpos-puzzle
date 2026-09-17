@@ -31,6 +31,8 @@ header{display:flex;justify-content:space-between;align-items:center;gap:10px;fl
 @media(max-width:480px){.app{padding:8px}.tray{grid-template-columns:repeat(3,1fr)}.piece{min-height:68px}.stats{width:100%}.stat{flex:1}.btn{padding:8px 10px}.toolbtn{width:44px;height:40px}}
 
 #splash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:radial-gradient(circle at 50% 35%,#202d4e 0,#0b1020 55%,#060914 100%);transition:opacity .55s ease,visibility .55s ease}#splash.hide{opacity:0;visibility:hidden;pointer-events:none}.splashCard{text-align:center;transform:translateY(0);animation:splashIn .65s cubic-bezier(.2,.8,.2,1)}.splashLogo{display:grid;grid-template-columns:repeat(3,18px);gap:6px;justify-content:center;margin-bottom:14px;transform:rotate(-8deg)}.splashLogo span{width:18px;height:18px;border-radius:50%;background:#6d5dfc;box-shadow:0 3px 8px rgba(0,0,0,.4);animation:bounce 1.1s infinite ease-in-out}.splashLogo span:nth-child(2){animation-delay:.08s;background:#27d394}.splashLogo span:nth-child(3){animation-delay:.16s;background:#f2d400}.splashLogo span:nth-child(4){animation-delay:.24s;background:#ff5a16}.splashLogo span:nth-child(5){animation-delay:.32s;background:#e52c9b}.splashTitle{font-size:42px;line-height:1;font-weight:950;letter-spacing:5px}.splashSub{font-size:11px;letter-spacing:6px;color:#9aa8bf;margin:7px 0 25px 6px}.loader{width:190px;height:5px;margin:auto;background:#27324a;border-radius:99px;overflow:hidden}.loaderBar{height:100%;width:45%;border-radius:99px;background:#6d5dfc;animation:load 1.15s ease-in-out infinite}.splashLoading{font-size:12px;color:#9aa8bf;margin-top:11px}@keyframes load{0%{transform:translateX(-110%)}100%{transform:translateX(430%)}}@keyframes bounce{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-7px) scale(1.08)}}@keyframes splashIn{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
+#splash{animation:splashSafetyHide .01s linear 4s forwards}
+@keyframes splashSafetyHide{to{opacity:0;visibility:hidden;pointer-events:none}}
 </style>
 </head>
 <body>
@@ -71,7 +73,9 @@ const defs=[
 {id:"lightgreen",n:"Hellgrün",c:"#75df43",s:[[0,0],[0,1],[1,0],[1,1]]}
 ];
 if(defs.reduce((n,d)=>n+d.s.length,0)!==T) throw new Error("Formen ergeben nicht 55 Felder");
-let pieces=[],selected=null,drag=null,toolbar=null,level=+(localStorage.lonposLevel||1),score=+(localStorage.lonposScore||0),seconds=0,timer;
+function safeGet(key,fallback){try{const v=localStorage.getItem(key);return v===null?fallback:v}catch(e){return fallback}}
+function safeSet(key,value){try{localStorage.setItem(key,String(value))}catch(e){}}
+let pieces=[],selected=null,drag=null,toolbar=null,level=+(safeGet("lonposLevel","1"))||1,score=+(safeGet("lonposScore","0"))||0,seconds=0,timer;
 const board=document.getElementById("board"),grid=document.getElementById("grid"),tray=document.getElementById("tray"),statusEl=document.getElementById("status"),levelEl=document.getElementById("level"),lv=document.getElementById("lv"),tm=document.getElementById("tm"),sc=document.getElementById("sc"),bar=document.getElementById("bar"),prog=document.getElementById("prog");
 function fmt(s){return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0")}
 function norm(a){const mr=Math.min(...a.map(x=>x[0])),mc=Math.min(...a.map(x=>x[1]));return a.map(x=>[x[0]-mr,x[1]-mc]).sort((x,y)=>x[0]-y[0]||x[1]-y[1])}
@@ -117,12 +121,24 @@ function removeToolbar(){if(toolbar){toolbar.remove();toolbar=null}}
 function tryTransform(p,newRot,newMirror){const old={rot:p.rot,mirror:p.mirror,row:p.row,col:p.col,pos:p.pos.map(x=>[...x])};p.rot=newRot;p.mirror=newMirror;if(p.placed&&!validAt(p,p.row,p.col,p)){p.rot=old.rot;p.mirror=old.mirror;return false}if(p.placed)setPosition(p,p.row,p.col);return true}
 function showToolbar(p){if(!p||p.fixed){removeToolbar();return}removeToolbar();const el=document.createElement("div");el.className="toolbar";el.innerHTML='<button class="toolbtn" aria-label="Drehen">↻</button><button class="toolbtn" aria-label="Spiegeln">🪞</button>';el.querySelectorAll("button")[0].addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();if(tryTransform(p,(p.rot+1)%4,p.mirror)){render();showToolbar(p)}else{statusEl.className="bad";statusEl.textContent="❌ Diese Drehung passt hier nicht."}});el.querySelectorAll("button")[1].addEventListener("pointerdown",e=>{e.stopPropagation();e.preventDefault();if(tryTransform(p,p.rot,!p.mirror)){render();showToolbar(p)}else{statusEl.className="bad";statusEl.textContent="❌ Diese Spiegelung passt hier nicht."}});board.append(el);toolbar=el;positionToolbar(p)}
 function positionToolbar(p){if(!toolbar||!p||!p.placed)return;const m=metrics(),xs=p.pos.map(x=>x[1]),ys=p.pos.map(x=>x[0]),cx=8+((Math.min(...xs)+Math.max(...xs)+1)/2)*m.w,cy=8+Math.min(...ys)*m.h;toolbar.style.left=cx+"px";toolbar.style.top=Math.max(8,cy-5)+"px"}
-function win(){clearInterval(timer);const gain=Math.max(100,1000-seconds*3);score+=gain;localStorage.lonposScore=score;let done=JSON.parse(localStorage.lonposDone||"[]");if(!done.includes(level))done.push(level);localStorage.lonposDone=JSON.stringify(done);updateStats();setTimeout(()=>{alert("🎉 Level "+level+" geschafft!\nZeit: "+fmt(seconds)+"\n+"+gain+" Punkte");if(level<100){level++;localStorage.lonposLevel=level;buildLevel()}},120)}
+function win(){clearInterval(timer);const gain=Math.max(100,1000-seconds*3);score+=gain;safeSet("lonposScore",score);let done;try{done=JSON.parse(safeGet("lonposDone","[]"));if(!Array.isArray(done))done=[]}catch(e){done=[]}if(!done.includes(level))done.push(level);safeSet("lonposDone",JSON.stringify(done));updateStats();setTimeout(()=>{alert("🎉 Level "+level+" geschafft!\nZeit: "+fmt(seconds)+"\n+"+gain+" Punkte");if(level<100){level++;safeSet("lonposLevel",level);buildLevel()}},120)}
 document.getElementById("reset").onclick=()=>buildLevel();
-document.getElementById("levels").onclick=()=>{const n=Number(prompt("Level auswählen (1–100):",level));if(n>=1&&n<=100){level=n;localStorage.lonposLevel=level;buildLevel()}};
+document.getElementById("levels").onclick=()=>{const n=Number(prompt("Level auswählen (1–100):",level));if(n>=1&&n<=100){level=n;safeSet("lonposLevel",level);buildLevel()}};
 window.addEventListener("resize",()=>{render();if(selected)showToolbar(pieces.find(p=>p.id===selected))});
 board.addEventListener("pointerdown",e=>{if(e.target===board||e.target===grid){selected=null;removeToolbar();render()}});
 function hideSplash(){const s=document.getElementById("splash");if(!s)return;s.classList.add("hide");}
+window.addEventListener("error",e=>{
+  console.error("LONPOS error",e.error||e.message);
+  const splash=document.getElementById("splash");
+  if(splash)splash.classList.add("hide");
+  const st=document.getElementById("status");
+  if(st){st.className="bad";st.textContent="LONPOS Startfehler – bitte Seite neu laden.";}
+});
+window.addEventListener("unhandledrejection",e=>{
+  console.error("LONPOS promise error",e.reason);
+  const splash=document.getElementById("splash");
+  if(splash)splash.classList.add("hide");
+});
 function boot(){
   try{
     buildLevel();
